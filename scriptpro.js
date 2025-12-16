@@ -586,7 +586,7 @@ function renderOrders() {
 function viewOrder(orderId) {
     const user = getCurrentUser(); if(!user) { showLoginModal(); return; }
     const ord = user.orders && user.orders.find(o => o.id === orderId);
-    if (!ord) { alert('Order not found.'); return; }
+    if (!ord) { alert('Data not found. Retry.'); return; }
 
     // populate receipt modal with this order
     document.getElementById('receipt-id').innerText = ord.id;
@@ -718,7 +718,7 @@ function runInteractionCheck() {
 function cancelOrder(orderId) {
     const user = getCurrentUser(); if(!user) { showLoginModal(); return; }
     const ord = user.orders && user.orders.find(o => o.id === orderId);
-    if (!ord) { alert('Order not found'); return; }
+    if (!ord) { alert('Data not found. Retry.'); return; }
     if (ord.method !== 'cod') { alert('Only COD orders can be cancelled'); return; }
     if (ord.status === 'Cancelled') { alert('Order already cancelled'); return; }
     ord.status = 'Cancelled';
@@ -742,7 +742,7 @@ function handleCheckStatus() {
         switchView('status');
         loadRouteStatus(trainNo, val.substring(6));
     } else {
-        alert("Train not found in Demo Database. Try 12367, 12423, 22309, 22405.");
+        alert("Data not found. Retry.");
     }
 }
 
@@ -1112,7 +1112,7 @@ function handlePnrCheck() {
         document.getElementById('pnr-train').innerText = '--';
         document.getElementById('pnr-coach').innerText = '--';
         document.getElementById('pnr-seat').innerText = '--';
-        alert('PNR not found in demo data.');
+        alert('Data not found. Retry.');
     }
     resultDiv.classList.remove('hidden');
 }
@@ -1150,7 +1150,7 @@ function handlePassCheck() {
         document.getElementById('pass-route').innerText = '--';
         document.getElementById('pass-days').innerText = '--';
         document.getElementById('pass-expiry').innerText = '--';
-        alert('Pass not found in demo data.');
+        alert('Data not found. Retry.');
     }
     if (resultDiv) resultDiv.classList.remove('hidden');
 }
