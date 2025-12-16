@@ -98,6 +98,8 @@ window.onload = function() {
         if (document.getElementById("username-display")) { document.getElementById("username-display").innerText = `, ${user.name}`; document.getElementById("username-display").classList.remove('hidden'); }
         if (document.getElementById("username-top")) document.getElementById("username-top").innerText = user.name;
         const avatar = document.querySelector('.user-avatar'); if (avatar) { avatar.innerText = user.name.split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase(); avatar.style.display = 'flex'; }
+        // Always show home view on reload if logged in
+        switchView('home');
     }
     setupTrainSearch();
     setupStationAutocomplete();
@@ -1156,45 +1158,6 @@ function handlePassCheck() {
 }
 
 // Auto-fix: Find full-screen blocking elements and disable pointer-events temporarily
-function autoInteractionFix() {
-    const fixes = [];
-    const w = window.innerWidth, h = window.innerHeight;
-    const elems = Array.from(document.querySelectorAll('body *'));
-    elems.forEach(el => {
-        try {
-            const r = el.getBoundingClientRect();
-            const cs = window.getComputedStyle(el);
-            const z = parseInt(cs.zIndex) || 0;
-            // candidate: covers viewport and is on top
-            if (r.width >= w - 2 && r.height >= h - 2 && z >= 500) {
-                // avoid disabling core app elements by checking role
-                if (el.matches && el.matches('iframe, script')) return;
-                el.dataset._savedPointer = el.style.pointerEvents || '';
-                el.style.pointerEvents = 'none';
-                fixes.push(el);
-                console.warn('autoInteractionFix disabled pointer-events on', el);
-            }
-        } catch (e) {}
-    });
-
-    if (fixes.length) {
-        const restoreBtn = document.getElementById('restore-interaction');
-        if (restoreBtn) restoreBtn.style.display = 'inline-block';
-        alert(`Interaction fix applied to ${fixes.length} element(s). Use 'Restore Interaction' to undo.`);
-    }
-    return fixes.length;
-}
-
-function restoreInteraction() {
-    const elems = Array.from(document.querySelectorAll('[data-_saved-pointer]'));
-    elems.forEach(el => {
-        el.style.pointerEvents = el.dataset._savedPointer || '';
-        delete el.dataset._savedPointer;
-    });
-    const restoreBtn = document.getElementById('restore-interaction');
-    if (restoreBtn) restoreBtn.style.display = 'none';
-    alert('Restored interaction on modified elements.');
-}
 
 // Run auto-fix on load (in case something left an overlay) and bind a keyboard shortcut Shift+I
 window.addEventListener('load', function() {
