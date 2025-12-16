@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackEngine | Intelligent Rail Dashboard</title>
+    <link rel="stylesheet" href="stylepro.css">
+    <!-- Removed external icon font to keep project self-contained -->
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="logo">
+            <h1>🚆 TRACKENGINE</h1>
+        </div>
+        <div class="user-profile">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button id="login-top-btn" class="search-btn" style="padding:8px 12px; font-size:14px; background:#fff; color:var(--primary-blue); border:1px solid #e6e6e6;" onclick="showLoginModal()">Login / Register</button>
+                <div style="position:relative;">
+                    <div class="user-avatar" onclick="handleAvatarClick()" title="Click: Profile / Orders">DK</div>
+                    <div id="profile-menu" class="hidden" style="position:absolute; right:0; top:48px; background:white; border:1px solid #eee; padding:8px; border-radius:8px; box-shadow:0 8px 20px rgba(0,0,0,0.08); min-width:160px; z-index:3000;">
+                        <div style="padding:8px 6px; cursor:pointer; font-weight:700; color:#333;" onclick="switchView('orders')">My Orders</div>
+                        <div style="padding:8px 6px; cursor:pointer; color:#e74c3c; font-weight:700;" onclick="logoutUser()">Logout</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-left:10px; display:inline-block; vertical-align:middle;">
+                <span id="username-top" onclick="handleAvatarClick()">User</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+
+        <div id="home-view">
+            <section class="greeting-section">
+                <h2>Hi <span id="username-display" class="hidden">, User</span>!</h2>
+                <p>Where are you traveling today?</p>
+            </section>
+
+            <section class="menu-section">
+                <h3 class="section-title">Services</h3>
+                <div class="services-grid">
+                    <div class="service-card" onclick="requireLoginThen('search')">
+                        <div class="icon-box icon-track">🚄</div>
+                        <span class="label">Track Your Train</span>
+                    </div>
+                    <div class="service-card" onclick="requireLoginThen('pnr')">
+                        <div class="icon-box icon-pnr">🎫</div>
+                        <span class="label">PNR Status</span>
+                    </div>
+                    <div class="service-card" onclick="requireLoginThen('pass')">
+                        <div class="icon-box icon-pass">🆔</div>
+                        <span class="label">Pass Validity</span>
+                    </div>
+                    <div class="service-card" onclick="requireLoginThen('pantry-auth')">
+                        <div class="icon-box icon-food">🍱</div>
+                        <span class="label">Pantry Car Order</span>
+                    </div>
+                    <div class="service-card" onclick="requireLoginThen('orders')">
+                        <div class="icon-box icon-pass">📦</div>
+                        <span class="label">My Orders</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="orders-view" class="hidden">
+            <div class="status-header alt">
+                <button onclick="returnFromOrders()" class="back-pill">← Return</button>
+                <div class="train-title">
+                    <h2 class="page-title">My Orders</h2>
+                </div>
+            </div>
+            <div class="search-card" style="max-width:800px; margin:20px auto;">
+                <h3>Your Recent Orders</h3>
+                <div id="orders-list" style="margin-top:12px;"></div>
+            </div>
+        </div>
+
+        <div id="pnr-view" class="hidden">
+            <div class="status-header alt">
+                <button onclick="switchView('home')" class="back-pill">← Return</button>
+                <div class="train-title">
+                    <h2 class="page-title">PNR Status</h2>
+                </div>
+            </div>
+            <div class="search-card" style="max-width:500px; margin:0 auto; text-align:center;">
+                <h3>Check Your PNR</h3>
+                <p style="color:#666; margin-bottom:10px;">Enter your 10-digit PNR to get train & seat details.</p>
+                <input type="text" id="pnr-check-input" placeholder="e.g. 2435678901" maxlength="10" style="text-align:center; letter-spacing:2px; font-weight:bold; font-size:20px;">
+                <div style="margin-top:12px;">
+                    <button class="search-btn" onclick="handlePnrCheck()">CHECK PNR</button>
+                </div>
+
+                <div id="pnr-result" class="pnr-result hidden" style="margin-top:18px; text-align:left;">
+                    <div style="font-weight:800; color:green; margin-bottom:8px;">PNR Details</div>
+                    <div class="ticket-row"><span>Train No:</span> <strong id="pnr-train">--</strong></div>
+                    <div class="ticket-row"><span>Coach:</span> <strong id="pnr-coach">--</strong></div>
+                    <div class="ticket-row"><span>Seat No:</span> <strong id="pnr-seat">--</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pass-view" class="hidden">
+            <div class="status-header alt">
+                <button onclick="switchView('home')" class="back-pill">← Return</button>
+                <div class="train-title">
+                    <h2 class="page-title">Pass Validity</h2>
+                </div>
+            </div>
+            <div class="search-card" style="max-width:500px; margin:0 auto; text-align:center;">
+                <h3>Check Your Pass</h3>
+                <p style="color:#666; margin-bottom:10px;">Enter your 6-digit pass number to verify validity.</p>
+                <input type="text" id="pass-input" placeholder="e.g. 998877" maxlength="6" style="text-align:center; letter-spacing:2px; font-weight:bold; font-size:20px;">
+                <div style="margin-top:12px;"><button class="search-btn" onclick="handlePassCheck()">CHECK PASS</button></div>
+
+                <div id="pass-result" class="pnr-result hidden" style="margin-top:18px; text-align:left;">
+                    <div style="font-weight:800; color:green; margin-bottom:8px;">Pass Details</div>
+                    <div class="ticket-row"><span>Holder:</span> <strong id="pass-holder">--</strong></div>
+                    <div class="ticket-row"><span>From → To:</span> <strong id="pass-route">--</strong></div>
+                    <div class="ticket-row"><span>Valid Days:</span> <strong id="pass-days">--</strong></div>
+                    <div class="ticket-row"><span>Expiry:</span> <strong id="pass-expiry">--</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="search-view" class="hidden">
+            <button onclick="switchView('home')" class="back-link">← Back</button>
+            <h2 class="page-title">Check Train Status</h2>
+            <div class="search-content-wrapper"> 
+                <div class="search-card">
+                    <h3>Search by Train</h3>
+                    <label>Train Number/Name</label>
+                    <div style="position: relative;">
+                        <input type="text" id="train-input" placeholder="Enter Train No." autocomplete="off">
+                        <div id="suggestion-box" class="suggestion-list hidden"></div>
+                    </div>
+                    <button class="search-btn" onclick="handleCheckStatus()">Check Status</button>
+                </div>
+
+                <div class="search-card">
+                    <h3>Search by Station</h3>
+                    <label>From</label>
+                    <div style="position: relative;">
+                        <input type="text" id="station-from" placeholder="Stn Code (e.g. DBRG)" autocomplete="off">
+                        <div id="suggest-from" class="suggestion-list hidden"></div>
+                    </div>
+                    <div class="swap-icon">🔁</div>
+                    <label>To</label>
+                    <div style="position: relative;">
+                        <input type="text" id="station-to" placeholder="Stn Code (e.g. BJU)" autocomplete="off">
+                        <div id="suggest-to" class="suggestion-list hidden"></div>
+                    </div>
+                    <button class="search-btn" onclick="handleStationSearch()">Check Trains</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="status-view" class="hidden">
+            <div class="status-header">
+                <button onclick="switchView('search')" class="back-link-small">← Back</button>
+                <div class="train-title">
+                    <h2 id="status-train-name">Train Status</h2>
+                    <p>Start Date: Today</p>
+                </div>
+                <button class="refresh-btn">🔄</button>
+            </div>
+            <div class="route-container">
+                <div class="route-header-row">
+                    <span>Arrival</span>
+                    <span style="text-align: center;">Station</span>
+                    <span style="text-align: right;">Departure</span>
+                </div>
+                <div id="timeline-content"></div>
+            </div>
+        </div>
+
+        <div id="train-list-view" class="hidden">
+            <div class="status-header">
+                <button onclick="switchView('search')" class="back-link-small">← Back</button>
+                <div class="train-title">
+                    <h2 id="train-list-header">Search Results</h2>
+                    <p id="train-list-sub">Trains Found</p>
+                </div>
+            </div>
+            <div class="train-list-container" id="train-list-content"></div>
+        </div>
+
+        <div id="pantry-auth-view" class="hidden">
+            <button onclick="switchView('home')" class="back-pill">← Return</button>
+            <h2 class="page-title">Pantry Order</h2>
+            <div class="search-card" style="max-width: 500px; margin: 0 auto; text-align: center;">
+                <h3>🎫 Seat Verification</h3>
+                <p style="color: #666; margin-bottom: 20px;">Enter your 10-digit PNR to enable seat delivery.</p>
+                <input type="text" id="pnr-input" placeholder="e.g. 2435678901" maxlength="10" style="text-align: center; letter-spacing: 2px; font-weight: bold; font-size: 20px;">
+                <button class="search-btn" onclick="verifyPnr()">VERIFY PNR</button>
+            </div>
+        </div>
+
+        <div id="pantry-confirm-view" class="hidden">
+            <button onclick="switchView('pantry-auth')" class="back-link">← Back</button>
+            <h2 class="page-title">Confirm Details</h2>
+            <div class="search-card" style="max-width: 500px; margin: 0 auto;">
+                <div class="ticket-header">
+                    <span style="color: green; font-weight: bold;">✅ PNR Verified</span>
+                </div>
+                <div class="ticket-details">
+                    <div class="ticket-row">
+                        <span>Train No:</span> <strong id="conf-train">--</strong>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Coach:</span> <strong id="conf-coach" style="color: var(--primary-blue); font-size: 20px;">--</strong>
+                    </div>
+                    <div class="ticket-row">
+                        <span>Seat No:</span> <strong id="conf-seat" style="color: var(--primary-blue); font-size: 20px;">--</strong>
+                    </div>
+                </div>
+                <button class="search-btn" onclick="loadPantryMenu()">CONFIRM & ORDER FOOD</button>
+            </div>
+        </div>
+
+        <div id="pantry-menu-view" class="hidden">
+            <div class="status-header alt">
+                <button onclick="switchView('home')" class="back-pill">← Return</button>
+                <div class="train-title">
+                    <h2>E-Catering Menu</h2>
+                    <p id="menu-seat-display">Seat: --</p>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="refresh-btn">🍽️</button>
+                    <button class="back-pill" onclick="openOrdersFromPantry()">My Orders</button>
+                </div>
+            </div>
+            
+            <div class="pantry-container" id="pantry-grid">
+                </div>
+
+            <div style="text-align:center; margin:14px 0 6px 0;">
+                <button class="back-pill" onclick="switchView('home')">← Return Without Ordering</button>
+            </div>
+
+            <div id="cart-bar" class="cart-floating-bar hidden" onclick="openCartModal()">
+                <div class="cart-info">
+                    <span id="cart-count">0 Items</span>
+                    <span class="cart-dot">•</span>
+                    <span id="cart-total">₹0</span>
+                </div>
+                <div class="cart-action">
+                    View Cart ➡️
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="station-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-station-name">Station Name</h3>
+                <button class="close-btn" onclick="closeModal('station-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h4>👥 Crowd Prediction</h4>
+                    <div class="crowd-item" id="crowd-gen-box">
+                        <div class="crowd-label"><span>General</span><span id="score-gen"></span></div>
+                        <div class="progress-bar"><div id="bar-gen" class="fill"></div></div>
+                        <p id="text-gen" class="crowd-desc"></p>
+                    </div>
+                    <div class="crowd-item" id="crowd-sl-box">
+                        <div class="crowd-label"><span>Sleeper</span><span id="score-sl"></span></div>
+                        <div class="progress-bar"><div id="bar-sl" class="fill"></div></div>
+                        <p id="text-sl" class="crowd-desc"></p>
+                    </div>
+                    <div class="crowd-item" id="crowd-ac-box">
+                        <div class="crowd-label"><span>AC Class</span><span id="score-ac"></span></div>
+                        <div class="progress-bar"><div id="bar-ac" class="fill"></div></div>
+                        <p id="text-ac" class="crowd-desc"></p>
+                    </div>
+                </div>
+                <div class="modal-section">
+                    <h4>📍 Platform Alert</h4>
+                    <div class="platform-alert-box">
+                        <div class="plat-number">PF <span id="modal-pf"></span></div>
+                        <div class="plat-status" id="modal-pf-status"></div>
+                    </div>
+                </div>
+                <div class="modal-section" id="prediction-verification">
+                    <h4>✅ Is the prediction correct?</h4>
+                    <div id="pred-options" style="margin-top:8px;">
+                        <button class="btn-option" onclick="markPredictionCorrect()">Yes</button>
+                        <button class="btn-option" onclick="openPredictionFeedback()">No</button>
+                    </div>
+
+                    <div id="pred-feedback" class="hidden" style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                        <div id="pred-scroll" style="overflow:auto; max-height:140px;">
+                            <label>Rate how incorrect: <strong id="pred-rating-val">3.0</strong></label>
+                            <input type="range" id="pred-rating" min="1" max="5" step="0.1" value="3" oninput="document.getElementById('pred-rating-val').innerText = parseFloat(this.value).toFixed(1)" style="width:100%; margin-top:8px;">
+                            <textarea id="pred-comment" placeholder="Describe what was different..." rows="4" style="width:100%; margin-top:8px; padding:8px; border-radius:6px; border:1px solid #e6e6e6;"></textarea>
+                        </div>
+                        <div id="pred-footer" style="text-align:right;">
+                            <button class="search-btn" onclick="submitPredictionFeedback()">SUBMIT</button>
+                        </div>
+                    </div>
+
+                    <div id="pred-thanks" class="hidden" style="color:green; font-weight:700; margin-top:8px;">Thanks for your feedback!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <div id="cart-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Your Cart</h3>
+                <button class="close-btn" onclick="closeModal('cart-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="cart-items-list" class="cart-list-container"></div>
+                <div class="bill-section">
+                    <div class="bill-row total">
+                        <span>Grand Total</span>
+                        <span id="cart-final-total">₹0</span>
+                    </div>
+                </div>
+                <button
+                     type="button"
+                     class="search-btn"
+                     onclick="confirmOrder()">
+                      Place Order
+                      </button> -->
+
+                <!-- <button class="search-btn" onclick="confirmOrder()">Place Order</button>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- <div id="payment-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Choose Payment Method</h3>
+                <button class="close-btn" onclick="closeModal('payment-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-methods" id="payment-methods-list">
+                    <div class="payment-option" onclick="selectPaymentMethod('cod', this)">
+                        <div class="pm-icon" style="background:#73d13d">💵</div>
+                        <div>
+                            <div style="font-weight:800">Cash on Delivery</div>
+                            <div style="font-size:12px; color:#666">Pay with cash when the order is delivered</div>
+                        </div>
+                    </div>
+                    <div class="payment-option" onclick="selectPaymentMethod('card', this)">
+                        <div class="pm-icon" style="background:#556ee6">💳</div>
+                        <div>
+                            <div style="font-weight:800">Card</div>
+                            <div style="font-size:12px; color:#666">Pay with debit/credit card</div>
+                        </div> -->
+                    <!-- </div>
+                    <div class="payment-option" onclick="selectPaymentMethod('upi', this)">
+                        <div class="pm-icon" style="background:#00bfa5">🔳</div>
+                        <div>
+                            <div style="font-weight:800">UPI</div>
+                            <div style="font-size:12px; color:#666">Pay via UPI (Google Pay, PhonePe, etc.)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="payment-footer">
+                    <div>
+                        <div class="payment-total">Total: <span id="payment-total-pay">₹0</span></div>
+                        <div style="font-size:13px; color:#666; margin-top:6px;">Discount: <strong id="payment-discount-percent">0%</strong> &nbsp; (<span id="payment-discount-amount">₹0</span>)</div>
+                        <div style="font-size:15px; font-weight:800; margin-top:6px;">Payable: <span id="payment-payable-amount">₹0</span></div>
+                    </div>
+                    <div>
+                        <button class="payment-confirm" id="payment-confirm-btn" disabled onclick="finalizeOrder()">Confirm & Pay</button>
+                         <button
+                          type="button"
+                            class="payment-confirm"
+                          id="payment-confirm-btn" -->
+                            <!-- disabled
+                        onclick="finalizeOrder()">
+                          Confirm & Pay
+                         </button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    <!-- CART MODAL -->
+<div id="cart-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Your Cart</h3>
+      <button type="button" class="close-btn" onclick="closeModal('cart-modal')">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="cart-items-list" class="cart-list-container"></div>
+
+      <div class="bill-section">
+        <div class="bill-row total">
+          <span>Grand Total</span>
+          <span id="cart-final-total">₹0</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="search-btn"
+        onclick="confirmOrder()">
+        Place Order
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="payment-modal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Choose Payment Method</h3>
+      <button type="button" class="close-btn" onclick="closeModal('payment-modal')">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="payment-methods" id="payment-methods-list">
+
+        <div class="payment-option" onclick="selectPaymentMethod('cod', this)">
+          <div class="pm-icon" style="background:#73d13d">💵</div>
+          <div>
+            <div style="font-weight:800">Cash on Delivery</div>
+            <div style="font-size:12px; color:#666">Pay with cash when delivered</div>
+          </div>
+        </div>
+
+        <div class="payment-option" onclick="selectPaymentMethod('card', this)">
+          <div class="pm-icon" style="background:#556ee6">💳</div>
+          <div>
+            <div style="font-weight:800">Card</div>
+            <div style="font-size:12px; color:#666">Debit / Credit Card</div>
+          </div>
+        </div>
+
+        <div class="payment-option" onclick="selectPaymentMethod('upi', this)">
+          <div class="pm-icon" style="background:#00bfa5">🔳</div>
+          <div>
+            <div style="font-weight:800">UPI</div>
+            <div style="font-size:12px; color:#666">Google Pay, PhonePe, etc.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="payment-footer">
+        <div>
+          <div class="payment-total">Total: <span id="payment-total-pay">₹0</span></div>
+          <div style="font-size:13px; color:#666;">
+            Discount: <strong id="payment-discount-percent">0%</strong>
+            (<span id="payment-discount-amount">₹0</span>)
+          </div>
+          <div style="font-size:15px; font-weight:800;">
+            Payable: <span id="payment-payable-amount">₹0</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="payment-confirm"
+          id="payment-confirm-btn"
+          disabled
+          onclick="finalizeOrder()">
+          Confirm & Pay
+        </button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+    <!-- Login / Register Modal -->
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="login-modal-title">Login</h3>
+                <button class="close-btn" onclick="closeModal('login-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="auth-forms">
+                    <div id="login-form">
+                        <label>Email</label>
+                        <input type="text" id="login-identifier" placeholder="email@example.com" style="width:100%; padding:8px; margin-top:6px; margin-bottom:8px;">
+                        <label>Password</label>
+                        <input type="password" id="login-pass" placeholder="password" style="width:100%; padding:8px; margin-top:6px; margin-bottom:12px;">
+                        <div style="text-align:right;"><button class="search-btn" onclick="loginUser()">Login</button></div>
+                        <div style="margin-top:8px; text-align:center; color:#666">New user? <a href="#" onclick="showRegister()">Register</a></div>
+                    </div>
+                    <div id="register-form" class="hidden">
+                        <label>First Name</label>
+                        <input type="text" id="reg-first" placeholder="First name" style="width:100%; padding:8px; margin-top:6px; margin-bottom:8px;">
+                        <label>Last Name</label>
+                        <input type="text" id="reg-last" placeholder="Last name" style="width:100%; padding:8px; margin-top:6px; margin-bottom:8px;">
+                        <label>Email</label>
+                        <input type="text" id="reg-email" placeholder="email@example.com" style="width:100%; padding:8px; margin-top:6px; margin-bottom:8px;">
+                        <label>Password</label>
+                        <input type="password" id="reg-pass" placeholder="password" style="width:100%; padding:8px; margin-top:6px; margin-bottom:12px;">
+                        <div style="text-align:right;"><button class="search-btn" onclick="registerUser()">Register</button></div>
+                        <div style="margin-top:8px; text-align:center; color:#666">Already have account? <a href="#" onclick="showLogin()">Login</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="interaction-check" onclick="runInteractionCheck()">Check Interactions</button>
+    <button id="restore-interaction" onclick="restoreInteraction()">Restore Interaction</button>
+
+    <div id="receipt-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #2ecc71;">
+                <h3>✅ Order Confirmed</h3>
+                <button class="close-btn" onclick="closeModal('receipt-modal')">×</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div class="receipt-icon">🍽️</div>
+                <h2 style="margin-bottom:10px;">Order Placed!</h2>
+                <p style="color:#666; margin-bottom:8px;">Order ID: <strong id="receipt-id">#TRK-000</strong></p>
+                <div id="receipt-summary" class="receipt-summary-box"></div>
+                <div style="font-weight:800; font-size:18px; margin-bottom:6px;">Total: <span id="receipt-total-pay">₹0</span></div>
+                <div style="font-size:14px; color:#666; margin-bottom:6px;">Payment: <strong id="receipt-payment-method">--</strong> &nbsp; Status: <strong id="receipt-payment-status">--</strong></div>
+                <div style="font-size:14px; color:#666; margin-bottom:10px;">Discount: <strong id="receipt-discount-amount">₹0</strong> &nbsp; Payable: <strong id="receipt-payable-amount">₹0</strong></div>
+                <div id="receipt-cancel-row" style="margin-bottom:10px; display:none;"><button class="btn-add-init" onclick="cancelCurrentOrder()">CANCEL ORDER</button></div>
+                <p class="receipt-note">Show this token to the pantry staff.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="scriptpro.js"></script>
+</body>
+</html>
