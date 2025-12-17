@@ -823,7 +823,7 @@ function determineTrainStatus(route) {
 
 function renderTrainList(from, to, trains) {
     const listContainer = document.getElementById("train-list-content");
-    document.getElementById("train-list-header").innerText = `${from} <i class="fas fa-arrow-right" style="font-size:16px"></i> ${to}`;
+    document.getElementById("train-list-header").innerText = `${from} ➔ ${to}`;
     document.getElementById("train-list-sub").innerText = `${trains.length} Trains Found`;
     
     listContainer.innerHTML = "";
